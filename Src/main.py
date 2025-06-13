@@ -467,7 +467,6 @@ class AutoSICApp:
             if lessons:
                 self.stats['lessons_detected'] = len(lessons)
                 self.update_stats()
-            
             if not lessons:
                 self.log_message("Không tìm thấy lesson nào! Tìm kiếm Expand button...")
                 # Tìm expand button khi không có lesson
@@ -491,9 +490,36 @@ class AutoSICApp:
                         self.update_stats()
                     
                     if not lessons:
-                        self.log_message("Vẫn không tìm thấy lesson sau khi expand!")
-                        self.stop_automation()
-                        return
+                        self.log_message("Vẫn không tìm thấy lesson sau khi expand! Thử scroll để tìm expand button tiếp theo...")
+                          # Scroll xuống để tìm expand button tiếp theo
+                        next_expand = self.scroll_and_find_expand((center_x, center_y), max_scrolls=10)
+                        
+                        if next_expand:
+                            x2, y2, w2, h2 = next_expand
+                            center_x2, center_y2 = x2 + w2//2, y2 + h2//2
+                            
+                            self.log_message(f"Tìm thấy expand button tiếp theo, click tại ({center_x2}, {center_y2})")
+                            pyautogui.click(center_x2, center_y2)
+                            self.stats['expand_clicks'] += 1
+                            self.update_stats()
+                            time.sleep(2)  # Đợi expand
+                            
+                            # Tìm lại lessons sau khi expand thứ 2
+                            self.log_message("Tìm lại lessons sau khi expand thứ 2...")
+                            lessons = DetectAllLessonImage()
+                            
+                            if lessons:
+                                self.stats['lessons_detected'] = len(lessons)
+                                self.update_stats()
+                                self.log_message(f"Tìm thấy {len(lessons)} lesson(s) sau khi expand và scroll!")
+                            else:
+                                self.log_message("Vẫn không tìm thấy lesson sau khi expand và scroll!")
+                                self.stop_automation()
+                                return
+                        else:
+                            self.log_message("Không tìm thấy expand button tiếp theo sau khi scroll!")
+                            self.stop_automation()
+                            return
                 else:
                     self.log_message("Không tìm thấy Expand button!")
                     self.stop_automation()
@@ -561,6 +587,45 @@ class AutoSICApp:
         except Exception as e:
             self.log_message(f"Lỗi trong automation: {str(e)}")
             self.stop_automation()
+    def scroll_and_find_expand(self, last_expand_pos: Tuple[int, int], max_scrolls: int = 10) -> Optional[Tuple[int, int, int, int]]:
+        """
+        Scroll xuống tại vị trí expand cuối cùng để tìm expand button tiếp theo
+        
+        Args:
+            last_expand_pos: Vị trí (x, y) của expand button cuối cùng được click
+            max_scrolls: Số lần scroll tối đa
+        
+        Returns:
+            Optional[Tuple[int, int, int, int]]: Vị trí expand button mới hoặc None
+        """
+        try:
+            scroll_x, scroll_y = last_expand_pos
+            scroll_count = 0
+            
+            self.log_message(f"Bắt đầu scroll tại vị trí ({scroll_x}, {scroll_y}) để tìm expand button tiếp theo")
+            
+            while scroll_count < max_scrolls:
+                # Scroll xuống tại vị trí expand cuối cùng
+                pyautogui.click(scroll_x, scroll_y)  # Click để focus
+                time.sleep(0.5)
+                pyautogui.scroll(-3, x=scroll_x, y=scroll_y)  # Scroll xuống 3 đơn vị
+                time.sleep(1)  # Đợi scroll hoàn thành
+                
+                scroll_count += 1
+                self.log_message(f"Scroll lần {scroll_count}/{max_scrolls}")
+                
+                # Kiểm tra có expand button mới không
+                expand_btn = DetectExpandButton()
+                if expand_btn:
+                    self.log_message(f"Tìm thấy expand button mới sau {scroll_count} lần scroll")
+                    return expand_btn
+                    
+            self.log_message(f"Không tìm thấy expand button sau {max_scrolls} lần scroll")
+            return None
+            
+        except Exception as e:
+            self.log_message(f"Lỗi khi scroll tìm expand: {str(e)}")
+            return None
 
 def main():
     """Function chính để chạy ứng dụng"""
