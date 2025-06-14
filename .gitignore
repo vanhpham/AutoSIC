@@ -18,6 +18,8 @@ build.sh
 AutoSIC.spec
 BUILD_README.md
 create_icon.py
+setup-release-branch.bat
+setup-release-branch.sh
 
 # IDEs
 .vscode/
