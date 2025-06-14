@@ -6,10 +6,18 @@ __pycache__/
 *.pyo
 *.pyd
 
-# PyInstaller
+# PyInstaller (chỉ ignore trong main branch)
 build/
 dist/
-*.spec
+
+# Build and deployment files (chỉ cho release branch)
+# Uncomment these lines in main branch, comment in release branch
+.github/
+build.bat
+build.sh
+AutoSIC.spec
+BUILD_README.md
+create_icon.py
 
 # IDEs
 .vscode/
