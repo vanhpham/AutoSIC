@@ -23,10 +23,34 @@ class AutoSICUI:
         self.on_reset_stats: Optional[Callable] = None
     
     def setup_window(self):
-        """Thiết lập cửa sổ chính"""
+        """Thiết lập cửa sổ chính với kích thước tỷ lệ so với màn hình"""
         self.root.title("AutoSIC - Tự động chạy bài học")
-        self.root.geometry("600x1000+2200+200")
+        
+        # Lấy kích thước màn hình
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        
+        # Tính kích thước cửa sổ dựa trên tỷ lệ màn hình
+        # Chiều rộng: 25% màn hình (tối thiểu 400px, tối đa 800px)
+        window_width = max(400, min(800, int(screen_width * 0.25)))
+        
+        # Chiều cao: 80% màn hình (tối thiểu 600px, tối đa 1200px)
+        window_height = max(600, min(1200, int(screen_height * 0.8)))
+        
+        # Vị trí cửa sổ: đặt ở bên phải màn hình với khoảng cách 50px từ rìa
+        x_offset = screen_width - window_width - 50
+        y_offset = 50
+        
+        # Đảm bảo cửa sổ không đặt ngoài màn hình
+        x_offset = max(0, x_offset)
+        y_offset = max(0, y_offset)
+        
+        geometry_string = f"{window_width}x{window_height}+{x_offset}+{y_offset}"
+        self.root.geometry(geometry_string)
         self.root.resizable(True, True)
+        
+        # Đặt kích thước tối thiểu để đảm bảo UI không bị méo
+        self.root.minsize(350, 500)
     
     def setup_ui(self):
         """Thiết lập giao diện người dùng"""
@@ -99,16 +123,21 @@ class AutoSICUI:
         ttk.Label(step_frame, text="Chống lặp:", font=("Arial", 9, "bold")).grid(row=2, column=0, sticky=tk.W, padx=(0, 10))
         self.loop_status_label = ttk.Label(step_frame, text="Bình thường", foreground="green")
         self.loop_status_label.grid(row=2, column=1, sticky=tk.W)
-    
     def _setup_log_frame(self, parent):
-        """Thiết lập frame log"""
+        """Thiết lập frame log với kích thước responsive"""
         log_frame = ttk.LabelFrame(parent, text="Log hoạt động", padding="10")
         log_frame.grid(row=3, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         log_frame.columnconfigure(0, weight=1)
         log_frame.rowconfigure(0, weight=1)
         
-        # Text area cho log
-        self.log_text = scrolledtext.ScrolledText(log_frame, width=70, height=15)
+        # Text area cho log với kích thước responsive
+        # Chiều rộng sẽ tự động điều chỉnh theo cửa sổ
+        # Chiều cao tối thiểu 10 dòng, tối đa 20 dòng
+        min_height = 10
+        max_height = 20
+        default_height = 15
+        
+        self.log_text = scrolledtext.ScrolledText(log_frame, height=default_height)
         self.log_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
         # Nút xóa log
