@@ -6,10 +6,9 @@ __pycache__/
 *.pyo
 *.pyd
 
-# PyInstaller
+# PyInstaller build artifacts (keep config files)
 build/
 dist/
-*.spec
 
 # IDEs
 .vscode/
