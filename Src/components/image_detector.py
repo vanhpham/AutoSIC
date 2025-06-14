@@ -79,45 +79,59 @@ class ImageDetector:
                 filtered_matches.append(match)
         
         return filtered_matches
-    
     def detect_all_lesson_images(self) -> List[Tuple[int, int, int, int]]:
         """
-        Detect tất cả các vị trí khớp với hình ảnh Lesson_image.png trên màn hình
+        Detect tất cả các vị trí khớp với cả Lesson_unfinish_image.png và Lesson_unfinish_bold.png trên màn hình
         
         Returns:
             List[Tuple[int, int, int, int]]: Danh sách các vị trí (x, y, width, height) 
             được sắp xếp từ trên xuống dưới theo tọa độ y
         """
         try:
-            template = self._load_template("Lesson_unfinish_image.png")
-            if template is None:
-                return []
+            # Danh sách templates để tìm
+            template_files = ["Lesson_unfinish_image.png", "Lesson_unfinish_bold.png"]
+            all_matches = []
             
             screenshot_cv = self._get_screenshot()
             
-            # Lấy kích thước template
-            template_height, template_width = template.shape[:2]
+            # Thực hiện template matching cho từng template
+            for template_file in template_files:
+                template = self._load_template(template_file)
+                if template is None:
+                    print(f"Không thể load template: {template_file}")
+                    continue
+                
+                # Lấy kích thước template
+                template_height, template_width = template.shape[:2]
+                
+                # Thực hiện template matching
+                result = cv2.matchTemplate(screenshot_cv, template, cv2.TM_CCOEFF_NORMED)
+                
+                # Đặt ngưỡng để xác định match
+                threshold = 0.99
+                locations = np.where(result >= threshold)
+                
+                # Chuyển đổi locations thành danh sách các hộp giới hạn
+                matches = []
+                for pt in zip(*locations[::-1]):  # locations trả về (y, x), ta cần (x, y)
+                    x, y = pt
+                    matches.append((x, y, template_width, template_height))
+                
+                # Thêm vào tất cả matches
+                all_matches.extend(matches)
+                print(f"Template {template_file}: Tìm thấy {len(matches)} vị trí khớp")
             
-            # Thực hiện template matching
-            result = cv2.matchTemplate(screenshot_cv, template, cv2.TM_CCOEFF_NORMED)
+            if not all_matches:
+                print("Không tìm thấy lesson nào trên màn hình")
+                return []
             
-            # Đặt ngưỡng để xác định match
-            threshold = 0.99
-            locations = np.where(result >= threshold)
-            
-            # Chuyển đổi locations thành danh sách các hộp giới hạn
-            matches = []
-            for pt in zip(*locations[::-1]):  # locations trả về (y, x), ta cần (x, y)
-                x, y = pt
-                matches.append((x, y, template_width, template_height))
-            
-            # Loại bỏ các matches trùng lặp
-            filtered_matches = self._filter_duplicate_matches(matches)
+            # Loại bỏ các matches trùng lặp (có thể cùng vị trí nhưng khác template)
+            filtered_matches = self._filter_duplicate_matches(all_matches)
             
             # Sắp xếp theo tọa độ y (từ trên xuống dưới)
             filtered_matches.sort(key=lambda match: match[1])
             
-            print(f"Tìm thấy {len(filtered_matches)} vị trí khớp với hình ảnh lesson")
+            print(f"Tổng cộng tìm thấy {len(filtered_matches)} vị trí khớp với hình ảnh lesson")
             for i, (x, y, w, h) in enumerate(filtered_matches):
                 print(f"Vị trí {i+1}: x={x}, y={y}, width={w}, height={h}")
             
