@@ -44,7 +44,7 @@ def DetectAllLessonImage() -> List[Tuple[int, int, int, int]]:
         result = cv2.matchTemplate(screenshot_cv, template, cv2.TM_CCOEFF_NORMED)
         
         # Đặt ngưỡng để xác định match
-        threshold = 0.97
+        threshold = 0.99
         locations = np.where(result >= threshold)
         
         # Chuyển đổi locations thành danh sách các hộp giới hạn
@@ -532,14 +532,13 @@ class AutoSICApp:
             
             self.log_message(f"Click vào lesson đầu tiên tại ({center_x}, {center_y})")
             pyautogui.click(center_x, center_y)
-            time.sleep(2)  # Đợi trang load
-              # Bước 2: Vòng lặp kiểm tra play button mỗi phút
+            time.sleep(2)  # Đợi trang load            # Bước 2: Vòng lặp kiểm tra play button mỗi phút
             while self.is_running:
                 self.log_message("Kiểm tra Play button...")
                 play_btn = DetectPlayButton()
                 
                 if play_btn:
-                    self.log_message("Phát hiện Play button - Tìm Refresh button...")
+                    self.log_message("Phát hiện Play button - Video đã kết thúc!")
                     self.stats['play_buttons_detected'] += 1
                     self.update_stats()
                     
@@ -555,24 +554,82 @@ class AutoSICApp:
                         self.update_stats()
                         time.sleep(3)  # Đợi trang refresh
                         
-                        # Quay lại tìm lesson và click lesson đầu tiên
-                        self.log_message("Tìm lại lessons sau khi refresh...")
+                        # Tìm lesson tiếp theo sau khi refresh
+                        self.log_message("Tìm lesson tiếp theo sau khi refresh...")
                         lessons = DetectAllLessonImage()
                         
                         if lessons:
+                            # Có lessons khả dụng, click vào lesson đầu tiên
                             first_lesson = lessons[0]
                             x, y, w, h = first_lesson
                             center_x, center_y = x + w//2, y + h//2
                             
-                            self.log_message(f"Click lại vào lesson đầu tiên tại ({center_x}, {center_y})")
+                            self.log_message(f"Click vào lesson đầu tiên tại ({center_x}, {center_y})")
                             pyautogui.click(center_x, center_y)
                             time.sleep(2)
                         else:
-                            self.log_message("Không tìm thấy lesson sau khi refresh!")
+                            # Không có lessons, tìm expand button
+                            self.log_message("Không tìm thấy lesson - Tìm expand button...")
+                            expand_btn = DetectExpandButton()
+                            
+                            if expand_btn:
+                                x, y, w, h = expand_btn
+                                center_x, center_y = x + w//2, y + h//2
+                                
+                                self.log_message(f"Click Expand button tại ({center_x}, {center_y})")
+                                pyautogui.click(center_x, center_y)
+                                self.stats['expand_clicks'] += 1
+                                self.update_stats()
+                                time.sleep(2)  # Đợi expand
+                                
+                                # Tìm lại lessons sau khi expand
+                                self.log_message("Tìm lại lessons sau khi expand...")
+                                lessons = DetectAllLessonImage()
+                                
+                                if lessons:
+                                    # Có lessons sau expand, click vào lesson đầu tiên
+                                    first_lesson = lessons[0]
+                                    x, y, w, h = first_lesson
+                                    center_x, center_y = x + w//2, y + h//2
+                                    
+                                    self.log_message(f"Click vào lesson đầu tiên sau expand tại ({center_x}, {center_y})")
+                                    pyautogui.click(center_x, center_y)
+                                    time.sleep(2)
+                                else:
+                                    # Vẫn không có lessons, thử scroll để tìm expand tiếp theo
+                                    self.log_message("Vẫn không có lesson - Scroll tìm expand tiếp theo...")
+                                    next_expand = self.scroll_and_find_expand((center_x, center_y), max_scrolls=10)
+                                    
+                                    if next_expand:
+                                        x2, y2, w2, h2 = next_expand
+                                        center_x2, center_y2 = x2 + w2//2, y2 + h2//2
+                                        
+                                        self.log_message(f"Click expand button tiếp theo tại ({center_x2}, {center_y2})")
+                                        pyautogui.click(center_x2, center_y2)
+                                        self.stats['expand_clicks'] += 1
+                                        self.update_stats()
+                                        time.sleep(2)
+                                        
+                                        # Tìm lessons sau expand thứ 2
+                                        lessons = DetectAllLessonImage()
+                                        if lessons:
+                                            first_lesson = lessons[0]
+                                            x, y, w, h = first_lesson
+                                            center_x, center_y = x + w//2, y + h//2
+                                            
+                                            self.log_message(f"Click lesson sau expand và scroll tại ({center_x}, {center_y})")
+                                            pyautogui.click(center_x, center_y)
+                                            time.sleep(2)
+                                        else:
+                                            self.log_message("Không tìm thấy lesson nào sau tất cả các bước! Có thể đã hoàn thành tất cả.")
+                                    else:
+                                        self.log_message("Không tìm thấy expand button tiếp theo! Có thể đã hoàn thành tất cả.")
+                            else:
+                                self.log_message("Không tìm thấy expand button! Có thể đã hoàn thành tất cả.")
                     else:
                         self.log_message("Không tìm thấy Refresh button!")
                 else:
-                    self.log_message("Không phát hiện Play button")
+                    self.log_message("Không phát hiện Play button - Video vẫn đang chạy")
                 
                 # Đợi 1 phút trước khi kiểm tra lại
                 self.log_message("Đợi 60 giây trước khi kiểm tra lại...")
