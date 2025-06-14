@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ release ]
 
+permissions:
+  contents: write
+  actions: read
+
 jobs:
   build-windows:
     runs-on: windows-latest
@@ -55,13 +59,10 @@ jobs:
         echo "date=$(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
     
     - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
       with:
         tag_name: release-${{ steps.commit.outputs.sha }}
-        release_name: AutoSIC Release ${{ steps.commit.outputs.sha }}
+        name: AutoSIC Release ${{ steps.commit.outputs.sha }}
         body: |
           🚀 **AutoSIC Phiên bản mới**
           
@@ -80,15 +81,6 @@ jobs:
           ## 📋 Yêu cầu:
           - Thư mục `Assets` phải cùng cấp với file thực thi
           - Đảm bảo có quyền truy cập màn hình để automation hoạt động
+        files: ./builds/AutoSIC.exe
         draft: false
         prerelease: false
-    
-    - name: Upload Windows Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./builds/AutoSIC.exe
-        asset_name: AutoSIC.exe
-        asset_content_type: application/octet-stream
