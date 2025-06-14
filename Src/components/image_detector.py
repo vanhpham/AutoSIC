@@ -104,7 +104,7 @@ class ImageDetector:
                     continue
                 
                 # Sử dụng adaptive threshold matching
-                matches = self._adaptive_threshold_matching(screenshot_cv, template, min_threshold=0.7)
+                matches = self._adaptive_threshold_matching(screenshot_cv, template, min_threshold=0.95)
                 
                 # Thêm vào tất cả matches
                 all_matches.extend(matches)
