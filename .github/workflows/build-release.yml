@@ -26,49 +26,16 @@ jobs:
     
     - name: Build with PyInstaller
       run: |
-        pyinstaller --onefile --windowed --name AutoSIC --icon=Assets/icon.ico --add-data "Assets;Assets" Src/main.py
+        pyinstaller --onefile --windowed --name AutoSIC --add-data "Assets;Assets" Src/main.py
     
     - name: Upload Windows build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: AutoSIC-Windows
         path: dist/AutoSIC.exe
-        
-  build-linux:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-    
-    - name: Install system dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y python3-tk python3-dev libopencv-dev
-        sudo apt install -y xvfb x11-utils libgtk-3-dev
-    
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pyinstaller
-    
-    - name: Build with PyInstaller
-      run: |
-        pyinstaller --onefile --name AutoSIC-Linux --add-data "Assets:Assets" Src/main.py
-    
-    - name: Upload Linux build
-      uses: actions/upload-artifact@v3
-      with:
-        name: AutoSIC-Linux
-        path: dist/AutoSIC-Linux
 
   release:
-    needs: [build-windows, build-linux]
+    needs: [build-windows]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/release' && github.event_name == 'push'
     
@@ -76,15 +43,9 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Download Windows build
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: AutoSIC-Windows
-        path: ./builds/
-    
-    - name: Download Linux build
-      uses: actions/download-artifact@v3
-      with:
-        name: AutoSIC-Linux
         path: ./builds/
     
     - name: Get commit info
@@ -109,18 +70,12 @@ jobs:
           
           ## 📥 Tải xuống:
           - **Windows:** AutoSIC.exe
-          - **Linux:** AutoSIC-Linux
           
           ## 🔧 Cài đặt và sử dụng:
           
           ### Windows:
           1. Tải xuống `AutoSIC.exe`
           2. Chạy trực tiếp (không cần cài đặt Python)
-          
-          ### Linux:
-          1. Tải xuống `AutoSIC-Linux`
-          2. Cấp quyền thực thi: `chmod +x AutoSIC-Linux`
-          3. Chạy: `./AutoSIC-Linux`
           
           ## 📋 Yêu cầu:
           - Thư mục `Assets` phải cùng cấp với file thực thi
@@ -136,14 +91,4 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./builds/AutoSIC.exe
         asset_name: AutoSIC.exe
-        asset_content_type: application/octet-stream
-    
-    - name: Upload Linux Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./builds/AutoSIC-Linux
-        asset_name: AutoSIC-Linux
         asset_content_type: application/octet-stream
