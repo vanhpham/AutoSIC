@@ -5,13 +5,15 @@ import sys
 
 # Đường dẫn gốc của project
 basedir = os.path.abspath('.')
+src_dir = os.path.join(basedir, 'Src')
 
 a = Analysis(
     ['Src/main.py'],
-    pathex=[basedir],
+    pathex=[basedir, src_dir],
     binaries=[],
     datas=[
         ('Assets', 'Assets'),  # Thêm thư mục Assets vào build
+        ('Src/components', 'components'),  # Thêm components folder
     ],
     hiddenimports=[
         'cv2',
@@ -22,6 +24,11 @@ a = Analysis(
         'tkinter',
         'tkinter.ttk',
         'tkinter.scrolledtext',
+        'components.ui_components',
+        'components.automation_core',
+        'components.stats_manager',
+        'components.loop_detector',
+        'components.image_detector',
     ],
     hookspath=[],
     runtime_hooks=[],

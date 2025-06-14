@@ -2,7 +2,15 @@
 """
 File chính để khởi chạy ứng dụng AutoSIC
 """
+import sys
+import os
 import tkinter as tk
+
+# Thêm đường dẫn Src vào sys.path để import components
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
 from components.ui_components import AutoSICUI
 from components.automation_core import AutomationCore
 from components.stats_manager import StatsManager
